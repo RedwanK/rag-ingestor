@@ -11,7 +11,7 @@ class RAGProvider(AsyncMixin) :
     light_rag = None
     rag_anything = None
     
-    async def __ainit__(self, rag_storage_dir = "rag_storage"):
+    async def __ainit__(self, rag_storage_dir):
         if os.path.exists(rag_storage_dir) and os.listdir(rag_storage_dir):
             print("✅ Found existing LightRAG instance, loading...")
         else:
@@ -19,8 +19,9 @@ class RAGProvider(AsyncMixin) :
         
         lightrag_instance = LightRAG(
             working_dir=rag_storage_dir,
+            llm_model_name=os.getenv("INGESTION_MODEL"),
             llm_model_func=llm_model_func,
-            embedding_func=embedding_func(3072, 8192)
+            embedding_func=embedding_func(),
         )
 
         await lightrag_instance.initialize_storages()
@@ -31,4 +32,3 @@ class RAGProvider(AsyncMixin) :
             lightrag=lightrag_instance,  # Pass existing LightRAG instance
             vision_model_func=vision_model_func,
         )
-        

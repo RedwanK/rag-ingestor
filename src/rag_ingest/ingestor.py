@@ -31,8 +31,13 @@ async def ingest(argv: list[str] | None = None) -> int:
     if not source_path.exists():
         parser.error(f"Source '{source_path}' does not exist.")
 
-    rag = await RAGProvider()
+    rag = await RAGProvider(storage_dir)
     
+    await rag.rag_anything.process_document_complete(
+        file_path="/var/www/rag-ingestor/assets/tout_savoir_maintenance_pred.md",
+        output_dir="./output-local"
+    )
+
     print('Great Success')
 
 def main() -> int:

@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rag-ingest"
+version = "0.1.0"
+description = "Open Source projet to easily ingest documents and create RAG storages for AIs"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "raganything>=1.2.8",
+    "lightrag-hku[api]",
+    "python-dotenv"
+]
+
+[project.scripts]
+rag-ingest = "rag_ingest:ingestor"
+

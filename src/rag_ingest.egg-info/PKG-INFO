@@ -1,0 +1,13 @@
+Metadata-Version: 2.4
+Name: rag-ingest
+Version: 0.1.0
+Summary: Open Source projet to easily ingest documents and create RAG storages for AIs
+Requires-Python: >=3.12
+Description-Content-Type: text/markdown
+Requires-Dist: raganything>=1.2.8
+Requires-Dist: lightrag-hku[api]
+Requires-Dist: python-dotenv
+
+# Quickstart
+
+Installing the project for dev : (inside venv) `pip install -e .`

@@ -1,0 +1,3 @@
+raganything>=1.2.8
+lightrag-hku[api]
+python-dotenv

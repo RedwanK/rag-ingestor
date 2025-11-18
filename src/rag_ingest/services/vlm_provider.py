@@ -1,7 +1,7 @@
 import os
 from lightrag.llm.openai import openai_complete_if_cache
 from dotenv import load_dotenv
-from ..llm import llm_model_func
+from .llm_provider import llm_model_func
 
 load_dotenv()
 

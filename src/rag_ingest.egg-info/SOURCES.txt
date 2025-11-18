@@ -9,9 +9,11 @@ src/rag_ingest.egg-info/entry_points.txt
 src/rag_ingest.egg-info/requires.txt
 src/rag_ingest.egg-info/top_level.txt
 src/rag_ingest/services/__init__.py
-src/rag_ingest/services/embed/__init__.py
-src/rag_ingest/services/embed/embed_provider.py
-src/rag_ingest/services/llm/__init__.py
-src/rag_ingest/services/llm/llm_provider.py
+src/rag_ingest/services/embed_provider.py
+src/rag_ingest/services/llm_provider.py
+src/rag_ingest/services/rag_provider.py
+src/rag_ingest/services/vlm_provider.py
+src/rag_ingest/services/utils/__init__.py
+src/rag_ingest/services/utils/async_mixin.py
 src/tests/__init__.py
 src/tests/test_ingestor.py

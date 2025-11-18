@@ -1,7 +1,8 @@
 import argparse
+import asyncio
 from pathlib import Path
 
-from .services import llm_model_func, embedding_func, vision_model_func
+from .services import llm_model_func, embedding_func, vision_model_func, RAGProvider
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
@@ -20,7 +21,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     return parser
 
-def ingest(argv: list[str] | None = None) -> int:
+async def ingest(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
@@ -29,5 +30,10 @@ def ingest(argv: list[str] | None = None) -> int:
 
     if not source_path.exists():
         parser.error(f"Source '{source_path}' does not exist.")
+
+    rag = await RAGProvider()
     
     print('Great Success')
+
+def main() -> int:
+    return asyncio.run(ingest())

@@ -1,5 +1,5 @@
 import os
-from lightrag.llm.ollama import ollama_model_complete
+from lightrag.llm.openai import openai_complete
 from dotenv import load_dotenv
 from .llm_provider import llm_model_func
 
@@ -10,16 +10,19 @@ def vision_model_func(
     ):
         # If messages format is provided (for multimodal VLM enhanced query), use it directly
         if messages:
-            return ollama_model_complete(
+            return openai_complete(
+                os.getenv("LLM_MODEL"),
                 "",
                 system_prompt=None,
                 history_messages=[],
                 messages=messages,
+                api_key=os.getenv("OPENAI_API_KEY"),
                 **kwargs,
             )
         # Traditional single image format
         elif image_data:
-            return ollama_model_complete(
+            return openai_complete(
+                 os.getenv("LLM_MODEL"),
                 "",
                 system_prompt=None,
                 history_messages=[],
@@ -42,6 +45,7 @@ def vision_model_func(
                     if image_data
                     else {"role": "user", "content": prompt},
                 ],
+                api_key=os.getenv("OPENAI_API_KEY"),
                 **kwargs,
             )
         # Pure text format

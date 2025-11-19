@@ -19,9 +19,9 @@ class RAGProvider(AsyncMixin) :
         
         lightrag_instance = LightRAG(
             working_dir=rag_storage_dir,
-            llm_model_name=os.getenv("INGESTION_MODEL"),
+            llm_model_name=os.getenv("LLM_MODEL"),
             llm_model_func=llm_model_func,
-            embedding_func=embedding_func(),
+            embedding_func=embedding_func()
         )
 
         await lightrag_instance.initialize_storages()
@@ -30,5 +30,5 @@ class RAGProvider(AsyncMixin) :
         self.light_rag = lightrag_instance
         self.rag_anything = RAGAnything(
             lightrag=lightrag_instance,  # Pass existing LightRAG instance
-            vision_model_func=vision_model_func,
+            vision_model_func=vision_model_func
         )

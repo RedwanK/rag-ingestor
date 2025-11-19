@@ -5,9 +5,9 @@ from lightrag.llm.ollama import ollama_embed
 
 load_dotenv()
 
-def embedding_func(embedding_dim=768, max_token_size=8192):
+def embedding_func(max_token_size=2048):
     return EmbeddingFunc(
-        embedding_dim=embedding_dim,
+        embedding_dim=int(os.getenv("EMBEDDING_DIM")),
         max_token_size=max_token_size,
         func=lambda texts: ollama_embed(
             texts,

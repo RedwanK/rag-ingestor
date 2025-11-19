@@ -34,8 +34,7 @@ async def ingest(argv: list[str] | None = None) -> int:
     rag = await RAGProvider(storage_dir)
     
     await rag.rag_anything.process_document_complete(
-        file_path="/var/www/rag-ingestor/assets/tout_savoir_maintenance_pred.md",
-        output_dir="./output-local"
+        file_path=source_path,
     )
 
     print('Great Success')

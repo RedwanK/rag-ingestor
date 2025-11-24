@@ -19,7 +19,7 @@ class RAGProvider(AsyncMixin) :
         
         lightrag_instance = LightRAG(
             working_dir=rag_storage_dir,
-            #llm_model_name=os.getenv("LLM_MODEL"),
+            llm_model_name=os.getenv("LLM_MODEL"),
             llm_model_func=llm_model_func,
             embedding_func=embedding_func()
         )

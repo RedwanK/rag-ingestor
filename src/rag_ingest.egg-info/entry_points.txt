@@ -1,2 +1,0 @@
-[console_scripts]
-rag-ingest = rag_ingest.ingestor:main

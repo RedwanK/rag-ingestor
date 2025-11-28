@@ -28,12 +28,12 @@ def test_queue_selection_orders_by_created_at(session_factory):
     with session_factory() as session:
         older = IngestionQueueItem(
             storage_path="old.pdf",
-            status=QueueStatus.QUEUED,
+            status=QueueStatus.queued,
             created_at=datetime.now(timezone.utc) - timedelta(minutes=5),
         )
         newer = IngestionQueueItem(
             storage_path="new.pdf",
-            status=QueueStatus.QUEUED,
+            status=QueueStatus.queued,
         )
         session.add_all([newer, older])
         session.commit()
@@ -53,14 +53,14 @@ def test_marking_and_logging(session_factory):
 
     with session_factory() as session:
         item = session.get(IngestionQueueItem, item.id)
-        assert item.status == QueueStatus.PROCESSING
+        assert item.status == QueueStatus.processing
         mark_indexed(session, item, rag_message="ok")
         log_event(session, queue_item_id=item.id, message="finished")
         session.commit()
 
     with session_factory() as session:
         item = session.get(IngestionQueueItem, item.id)
-        assert item.status == QueueStatus.INDEXED
+        assert item.status == QueueStatus.indexed
         assert item.rag_message == "ok"
         logs = session.query(IngestionLog).filter_by(queue_item_id=item.id).all()
         assert len(logs) == 1
@@ -72,7 +72,7 @@ def test_reset_stale_jobs(session_factory):
     with session_factory() as session:
         stale = IngestionQueueItem(
             storage_path="stale.pdf",
-            status=QueueStatus.PROCESSING,
+            status=QueueStatus.processing,
             started_at=stale_started,
         )
         session.add(stale)
@@ -86,7 +86,7 @@ def test_reset_stale_jobs(session_factory):
 
     with session_factory() as session:
         updated = session.get(IngestionQueueItem, stale.id)
-        assert updated.status == QueueStatus.QUEUED
+        assert updated.status == QueueStatus.queued
         assert updated.started_at is None
         assert updated.rag_message == "reset to queued after timeout"
         logs = session.query(IngestionLog).filter_by(queue_item_id=stale.id).all()

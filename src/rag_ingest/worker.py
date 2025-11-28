@@ -9,14 +9,11 @@ from typing import Awaitable, Callable, Optional
 
 from sqlalchemy.orm import sessionmaker
 
-from .config import (
-    get_poll_interval_seconds,
-    get_processing_timeout_seconds,
-    get_rag_storage_dir,
-    get_shared_storage_dir,
+from .orm import (
+    Config,
+    get_session_maker
 )
-from .db import get_session_maker
-from .models import IngestionQueueItem, QueueStatus
+from .entity import IngestionQueueItem, QueueStatus
 from .repository import (
     get_next_queued,
     has_processing,
@@ -54,12 +51,12 @@ async def process_queue_item(
             mark_failed(
                 session,
                 queue_item,
-                status=QueueStatus.DOWNLOAD_FAILED,
+                status=QueueStatus.download_failed,
                 rag_message=f"File not found at {abs_path}",
             )
             log_event(
                 session,
-                queue_item_id=queue_item.id,
+                ingestion_queue_item_id=queue_item.id,
                 level="error",
                 message=f"Unable to open file at {abs_path}",
             )
@@ -75,7 +72,7 @@ async def process_queue_item(
             )
             log_event(
                 session,
-                queue_item_id=queue_item.id,
+                ingestion_queue_item_id=queue_item.id,
                 level="info",
                 message=f"Successfully ingested {queue_item.storage_path}",
             )
@@ -85,12 +82,12 @@ async def process_queue_item(
             mark_failed(
                 session,
                 queue_item,
-                status=QueueStatus.FAILED,
+                status=QueueStatus.failed,
                 rag_message=str(exc),
             )
             log_event(
                 session,
-                queue_item_id=queue_item.id,
+                ingestion_queue_item_id=queue_item.id,
                 level="error",
                 message=f"Failed to ingest {queue_item.storage_path}: {exc}",
             )
@@ -108,10 +105,10 @@ async def run_worker(
     rag_provider_factory: Optional[Callable[[Path], Awaitable[RAGProvider]]] = None,
 ) -> None:
     session_factory = session_factory or get_session_maker()
-    shared_root = shared_root or get_shared_storage_dir()
-    rag_storage_dir = rag_storage_dir or get_rag_storage_dir()
-    poll_interval = poll_interval or get_poll_interval_seconds()
-    processing_timeout = processing_timeout or get_processing_timeout_seconds()
+    shared_root = shared_root or Config.get_shared_storage_dir()
+    rag_storage_dir = rag_storage_dir or Config.get_rag_storage_dir()
+    poll_interval = poll_interval or Config.get_poll_interval_seconds()
+    processing_timeout = processing_timeout or Config.get_processing_timeout_seconds()
     rag_provider_factory = rag_provider_factory or (lambda path: RAGProvider(path))
 
     shared_root.mkdir(parents=True, exist_ok=True)
@@ -153,7 +150,7 @@ async def run_worker(
             reserve_for_processing(session, queue_item, started_at=datetime.now(timezone.utc))
             log_event(
                 session,
-                queue_item_id=queue_item.id,
+                ingestion_queue_item_id=queue_item.id,
                 level="info",
                 message="Job reserved for processing",
             )
@@ -162,3 +159,6 @@ async def run_worker(
         await process_queue_item(session_factory, queue_item, shared_root, rag_provider)
 
     logger.info("Worker stopped cleanly")
+
+def main() -> int:
+    return asyncio.run(run_worker())

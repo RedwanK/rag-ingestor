@@ -6,13 +6,13 @@ from typing import Optional
 from sqlalchemy import asc, select, update
 from sqlalchemy.orm import Session
 
-from .models import IngestionLog, IngestionQueueItem, QueueStatus
+from .entity import IngestionLog, IngestionQueueItem, QueueStatus
 
 
 def get_next_queued(session: Session) -> Optional[IngestionQueueItem]:
     statement = (
         select(IngestionQueueItem)
-        .where(IngestionQueueItem.status == QueueStatus.QUEUED)
+        .where(IngestionQueueItem.status == QueueStatus.queued)
         .order_by(asc(IngestionQueueItem.created_at))
         .limit(1)
     )
@@ -21,7 +21,7 @@ def get_next_queued(session: Session) -> Optional[IngestionQueueItem]:
 
 def has_processing(session: Session) -> bool:
     statement = select(IngestionQueueItem).where(
-        IngestionQueueItem.status == QueueStatus.PROCESSING
+        IngestionQueueItem.status == QueueStatus.processing
     )
     return session.execute(statement).first() is not None
 
@@ -30,7 +30,7 @@ def reserve_for_processing(
     session: Session, item: IngestionQueueItem, started_at: Optional[datetime] = None
 ) -> IngestionQueueItem:
     started_at = started_at or datetime.now(timezone.utc)
-    item.status = QueueStatus.PROCESSING
+    item.status = QueueStatus.processing
     item.started_at = started_at
     session.add(item)
     session.flush()
@@ -40,7 +40,7 @@ def reserve_for_processing(
 def mark_indexed(
     session: Session, item: IngestionQueueItem, rag_message: str | None = None
 ) -> IngestionQueueItem:
-    item.status = QueueStatus.INDEXED
+    item.status = QueueStatus.indexed
     item.ended_at = datetime.now(timezone.utc)
     item.rag_message = rag_message
     session.add(item)
@@ -51,7 +51,7 @@ def mark_indexed(
 def mark_failed(
     session: Session,
     item: IngestionQueueItem,
-    status: QueueStatus = QueueStatus.FAILED,
+    status: QueueStatus = QueueStatus.failed,
     rag_message: str | None = None,
 ) -> IngestionQueueItem:
     item.status = status
@@ -64,11 +64,11 @@ def mark_failed(
 
 def log_event(
     session: Session,
-    queue_item_id: int,
+    ingestion_queue_item_id: int,
     message: str,
     level: str = "info",
 ) -> IngestionLog:
-    log = IngestionLog(queue_item_id=queue_item_id, message=message, level=level)
+    log = IngestionLog(ingestion_queue_item_id=ingestion_queue_item_id, message=message, level=level, created_at=datetime.now(), updated_at=datetime.now())
     session.add(log)
     session.flush()
     return log
@@ -77,27 +77,36 @@ def log_event(
 def reset_stale_processing(session: Session, timeout_seconds: float) -> list[int]:
     """Reset processing items older than the timeout back to queued and return their ids."""
     cutoff = datetime.now(timezone.utc) - timedelta(seconds=timeout_seconds)
-    statement = (
-        update(IngestionQueueItem)
-        .where(
-            IngestionQueueItem.status == QueueStatus.PROCESSING,
-            IngestionQueueItem.started_at.is_not(None),
-            IngestionQueueItem.started_at < cutoff,
+
+    stale_ids = (
+        session.execute(
+            select(IngestionQueueItem.id).where(
+                IngestionQueueItem.status == QueueStatus.processing,
+                IngestionQueueItem.started_at.is_not(None),
+                IngestionQueueItem.started_at < cutoff,
+            )
         )
+        .scalars()
+        .all()
+    )
+    if not stale_ids:
+        return []
+
+    session.execute(
+        update(IngestionQueueItem)
+        .where(IngestionQueueItem.id.in_(stale_ids))
         .values(
-            status=QueueStatus.QUEUED,
+            status=QueueStatus.queued,
             started_at=None,
             ended_at=None,
             rag_message="reset to queued after timeout",
         )
-        .returning(IngestionQueueItem.id)
     )
-    result = session.execute(statement).scalars().all()
-    for queue_item_id in result:
+    for queue_item_id in stale_ids:
         log_event(
             session,
             queue_item_id=queue_item_id,
             level="warning",
             message="job reset to queued after exceeding processing timeout",
         )
-    return result
+    return stale_ids

@@ -23,4 +23,5 @@ dev = [
 
 [project.scripts]
 rag-ingest = "rag_ingest.ingestor:main"
+rag-worker = "rag_ingest.worker:main"
 

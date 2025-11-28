@@ -6,7 +6,7 @@ from .llm_provider import llm_model_func
 
 load_dotenv()
 
-def vision_model_func_bck(
+def vision_model_func(
         prompt, system_prompt=None, history_messages=[], image_data=None, messages=None, **kwargs
     ):
         # If messages format is provided (for multimodal VLM enhanced query), use it directly
@@ -53,7 +53,7 @@ def vision_model_func_bck(
         else:
             return llm_model_func(prompt, system_prompt, history_messages, **kwargs)
 
-def vision_model_func(
+def vision_model_func_bck(
         prompt, system_prompt=None, history_messages=[], image_data=None, messages=None, **kwargs
     ):
         # If messages format is provided (for multimodal VLM enhanced query), use it directly

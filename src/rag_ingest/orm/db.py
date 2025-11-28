@@ -3,13 +3,12 @@ from __future__ import annotations
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-from .config import get_database_url
+from .config import Config
 
 Base = declarative_base()
 
-
 def get_engine(url: str | None = None):
-    return create_engine(url or get_database_url(), pool_pre_ping=True, future=True)
+    return create_engine(url or Config.get_database_url(), pool_pre_ping=True, future=True)
 
 
 def get_session_maker(url: str | None = None):

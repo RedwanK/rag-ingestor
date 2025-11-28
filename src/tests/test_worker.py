@@ -58,7 +58,7 @@ async def test_worker_processes_queue_and_marks_indexed(tmp_path, session_factor
 
     with session_factory() as session:
         refreshed = session.get(IngestionQueueItem, item.id)
-        assert refreshed.status == QueueStatus.INDEXED
+        assert refreshed.status == QueueStatus.indexed
         assert refreshed.ended_at is not None
         assert "successfully" in (refreshed.rag_message or "").lower()
 
@@ -87,5 +87,5 @@ async def test_missing_file_marks_download_failed(tmp_path, session_factory):
 
     with session_factory() as session:
         refreshed = session.get(IngestionQueueItem, item.id)
-        assert refreshed.status == QueueStatus.DOWNLOAD_FAILED
+        assert refreshed.status == QueueStatus.download_failed
         assert "file not found" in (refreshed.rag_message or "").lower()

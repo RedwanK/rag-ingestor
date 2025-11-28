@@ -1,5 +1,3 @@
 from .ingestor import ingest as ingestor
 
-__all__ = [
-    "ingestor"
-]
+__all__ = ["ingestor"]

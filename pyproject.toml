@@ -11,7 +11,14 @@ requires-python = ">=3.12"
 dependencies = [
     "raganything>=1.2.8",
     "lightrag-hku[api]",
-    "python-dotenv"
+    "python-dotenv",
+    "SQLAlchemy>=2.0",
+    "pymysql"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
 ]
 
 [project.scripts]

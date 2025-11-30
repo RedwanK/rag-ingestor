@@ -9,5 +9,7 @@ build/
 
 src/rag_ingest/__pycache__
 src/rag_ingest/services/__pycache__
+src/rag_ingest/entity/__pycache__
+src/rag_ingest/orm/__pycache__
 src/rag_ingest/services/utils/__pycache__
 src/rag_ingest.egg-info/

@@ -70,6 +70,14 @@ Dans `.env`, renseigner au minimum :
 
 Toutes les variables disponibles sont visibles dans `.env.dist` et les fichiers `src/rag_ingest/services/*.py`.
 
+Variables supplémentaires pour le gestionnaire d'ingestion synchronisé :
+
+- `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` : base MySQL partagée avec le manager.
+- `SHARED_STORAGE_DIR` : répertoire commun où le manager dépose les fichiers en attente (défaut : `shared_storage`).
+- `RAG_STORAGE_DIR` : répertoire LightRAG (défaut : `rag_storage`).
+- `INGESTOR_POLL_INTERVAL` : intervalle en secondes entre deux sondes quand la file est vide (défaut : `5`).
+- `INGESTOR_PROCESSING_TIMEOUT` : délai en secondes avant de remettre un job `processing` en `queued` (défaut : `3600`).
+
 ### 5. Installer LightRAG comme service (Linux)
 
 Vérifier que `lightrag-server` est disponible :
@@ -135,13 +143,31 @@ Puis ouvrir `http://localhost:3000` pour configurer Ollama, les clés API, etc.
 2. Lancer l’ingestion :
 
    ```bash
-   rag-ingest <fichier_ou_dossier> --storage-dir rag_storage
+   rag-ingest single <fichier_ou_dossier> --storage-dir rag_storage
    # ex
-   rag-ingest assets/01_offre_maintenance_predictive.pdf --storage-dir rag_storage
+   rag-ingest single assets/01_offre_maintenance_predictive.pdf --storage-dir rag_storage
    ```
 
 3. Les documents sont traités par `LightRAG` via `RAGAnything`, puis indexés dans `rag_storage/`.
 4. Interroger ensuite le store via LightRAG, OpenWebUI ou ton API/outil préféré.
+
+### 8. Worker d’ingestion synchronisé
+
+Pour ingérer automatiquement les fichiers planifiés par le manager via MySQL :
+
+```bash
+rag-ingest init-db              # créer le schéma des tables d’ingestion
+rag-ingest worker --poll-interval 2
+```
+
+Le worker :
+
+- vérifie qu’aucun job n’est déjà en `processing` (un seul worker actif à la fois),
+- remet en `queued` les jobs `processing` plus vieux que `INGESTOR_PROCESSING_TIMEOUT`,
+- lit le prochain job `queued` ordonné par `createdAt`, le réserve (`processing` + `startedAt`),
+- résout `storage_path` sous `SHARED_STORAGE_DIR`, lance l’ingestion LightRAG, puis passe le statut à `indexed`/`failed`/`download_failed` et consigne les événements dans `ingestion_logs`.
+
+Plus de détails dans `docs/ingestion_worker.md`.
 
 ---
 

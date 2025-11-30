@@ -7,5 +7,5 @@ __all__ = [
     "llm_model_func",
     "embedding_func",
     "vision_model_func",
-    "RAGProvider"
+    "RAGProvider",
 ]

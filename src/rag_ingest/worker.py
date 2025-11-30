@@ -130,6 +130,7 @@ async def run_worker(
 
     while not stop_event.is_set():
         with session_factory() as session:
+            session.expire_on_commit=False
             reset_ids = reset_stale_processing(session, processing_timeout)
             if reset_ids:
                 session.commit()

@@ -105,7 +105,7 @@ def reset_stale_processing(session: Session, timeout_seconds: float) -> list[int
     for queue_item_id in stale_ids:
         log_event(
             session,
-            queue_item_id=queue_item_id,
+            ingestion_queue_item_id=queue_item_id,
             level="warning",
             message="job reset to queued after exceeding processing timeout",
         )

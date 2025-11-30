@@ -36,3 +36,7 @@
 - [x] Add unit/integration tests for the database layer (queue selection by `status` and `createdAt`, status transitions, log insertion) #tests #backend #ingestion
 - [x] Add tests for the ingestion worker loop covering single-job concurrency and status transitions (`queued` → `processing` → `indexed`/`failed`/`download_failed`) #tests #backend #ingestion
 - [x] Update developer documentation to describe configuration (.env, DB connection, shared storage directory), the ingestion worker command, and the synchronized ingestion workflow with the queue #docs #backend #ingestion
+
+## Refactor and Communication with Manager
+- [ ] Test some error scenario where ollama or LLM is not reachable, ingestor should place the ingestion_queue_item in failed mode #tests #ingestion
+- [ ] Continue complete refactor to handle properly SQL session and management #refactor #backend #ingestion

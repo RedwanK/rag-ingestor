@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""SQLAlchemy model capturing the log history of ingestion attempts."""
+
 from datetime import datetime
 from typing import TYPE_CHECKING
 
@@ -12,6 +14,7 @@ if TYPE_CHECKING:
     from .ingestion_queue_item import IngestionQueueItem
 
 class IngestionLog(Base):
+    """A log entry tied to a specific ingestion queue item."""
     __tablename__ = "ingestion_log"
 
     id: Mapped[int] = mapped_column(primary_key=True)

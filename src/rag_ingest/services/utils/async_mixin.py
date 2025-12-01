@@ -1,6 +1,7 @@
 """Async Mixin very useful, comes from a great article here : http://dev.to/akarshan/asynchronous-python-magic-how-to-create-awaitable-constructors-with-asyncmixin-18j5"""
 
 class AsyncMixin:
+    """Allow classes to define async constructors while keeping __init__ synchronous."""
     def __init__(self, *args, **kwargs):
         """
         Standard constructor used for arguments pass

@@ -1,3 +1,5 @@
+"""Embedding provider factory for LightRAG using Ollama under the hood."""
+
 import os
 from dotenv import load_dotenv
 from lightrag.utils import EmbeddingFunc
@@ -6,6 +8,7 @@ from lightrag.llm.ollama import ollama_embed
 load_dotenv()
 
 def embedding_func(max_token_size=2048):
+    """Return an EmbeddingFunc wired to the embedding model defined in env vars."""
     return EmbeddingFunc(
         embedding_dim=int(os.getenv("EMBEDDING_DIM")),
         max_token_size=max_token_size,

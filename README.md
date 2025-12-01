@@ -10,6 +10,21 @@ pip install -e .
 
 ---
 
+## Architecture technique
+
+Le projet est centré autour de deux binaires principaux :
+
+- `rag-ingest single` déclenche une ingestion ponctuelle via `src/rag_ingest/ingestor.py` en appelant directement LightRAG/RAGAnything ;
+- `rag-ingest worker` (dans `src/rag_ingest/worker.py`) interroge la base MySQL, réserve un job de la file d’ingestion, récupère le fichier dans `SHARED_STORAGE_DIR` puis déclenche le pipeline LightRAG avant de journaliser le résultat.
+
+Organisation du code :
+
+- `src/rag_ingest/entity` : modèles SQLAlchemy (jobs d’ingestion, logs, documents).
+- `src/rag_ingest/repository` : opérations sur la file (`IngestionQueueItemRepo`) et sur les journaux (`IngestionLogRepo`).
+- `src/rag_ingest/services` : adaptation LightRAG/RAGAnything et fournisseurs de modèles (LLM, embeddings, VLM).
+- `src/rag_ingest/orm` : configuration de la base, création du schéma et session factory.
+- `docs/ingestion_worker.md` et `docs/technical/*` : documentation fonctionnelle et technique détaillée (diagrammes Mermaid inclus).
+
 ## Installation (Linux & macOS)
 
 ### 1. Prérequis
@@ -58,7 +73,7 @@ cp .env.dist .env
 
 Dans `.env`, renseigner au minimum :
 
-- `OPENAI_API_KEY=<ta_cle_api>`
+- `OPENAI_API_KEY=<cle_api>`
 - `OPENAI_INGESTION_MODEL=<modele_openai>`
 - `OPENAI_EMBEDDING_MODEL=<modele_embedding_openai>` (si utilisé)
 - `LLM_MODEL` et `LLM_BINDING` (pour LightRAG)
@@ -77,62 +92,6 @@ Variables supplémentaires pour le gestionnaire d'ingestion synchronisé :
 - `RAG_STORAGE_DIR` : répertoire LightRAG (défaut : `rag_storage`).
 - `INGESTOR_POLL_INTERVAL` : intervalle en secondes entre deux sondes quand la file est vide (défaut : `5`).
 - `INGESTOR_PROCESSING_TIMEOUT` : délai en secondes avant de remettre un job `processing` en `queued` (défaut : `3600`).
-
-### 5. Installer LightRAG comme service (Linux)
-
-Vérifier que `lightrag-server` est disponible :
-
-```bash
-.venv/bin/lightrag-server --help
-```
-
-Adapter `lightrag.service` si nécessaire (chemins, env). Exemple :
-
-```ini
-[Unit]
-Description=LightRag instance for custom RAG
-
-[Service]
-Environment="PATH=/var/www/rag-ingestor/.venv/bin"
-WorkingDirectory=/var/www/rag-ingestor
-ExecStart=/var/www/rag-ingestor/.venv/bin/lightrag-server
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Installer et activer le service :
-
-```bash
-sudo cp lightrag.service /etc/systemd/system/lightrag.service
-sudo systemctl daemon-reload
-sudo systemctl enable --now lightrag
-systemctl status lightrag
-```
-
-Sur macOS (pas de systemd), lancer simplement :
-
-```bash
-source .venv/bin/activate
-lightrag-server
-```
-
-ou créer un service `launchd` équivalent.
-
-### 6. Installer OpenWebUI
-
-OpenWebUI offre une interface web pour Ollama / RAG. Déploiement recommandé via Docker :
-
-```bash
-docker run -d \
-  --name open-webui \
-  -p 3000:8080 \
-  -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
-  -v open-webui:/app/backend/data \
-  ghcr.io/open-webui/open-webui:main
-```
-
-Puis ouvrir `http://localhost:3000` pour configurer Ollama, les clés API, etc.
 
 ### 7. Ingestion de documents
 
@@ -169,6 +128,3 @@ Le worker :
 
 Plus de détails dans `docs/ingestion_worker.md`.
 
----
-
-Besoin d’une doc complémentaire (ex. déploiement en prod, configuration avancée des modèles) ? Ajoute une section dédiée ou crée un fichier `docs/`.

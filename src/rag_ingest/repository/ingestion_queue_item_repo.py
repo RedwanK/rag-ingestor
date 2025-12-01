@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Repository for querying and mutating ingestion queue items."""
+
 from typing import Optional
 
 from datetime import datetime, timedelta, timezone
@@ -12,9 +14,11 @@ class IngestionQueueItemRepo:
     session: Session = None
 
     def __init__(self, session):
+        """Store the active DB session used for subsequent operations."""
         self.session = session
 
     def find_next_queued_item(self) -> Optional[IngestionQueueItem]:
+        """Fetch the oldest job still marked as queued."""
         statement = (
             select(IngestionQueueItem)
             .where(IngestionQueueItem.status == QueueStatus.queued)
@@ -24,9 +28,11 @@ class IngestionQueueItemRepo:
         return self.session.execute(statement).scalar_one_or_none()
     
     def find_one_by_id(self, id): 
+        """Return a queue item by primary key or None."""
         return self.session.get(IngestionQueueItem, id)
     
     def has_processing_item(self) -> bool:
+        """Check whether any job is currently marked as processing."""
         statement = select(IngestionQueueItem).where(
             IngestionQueueItem.status == QueueStatus.processing
         )
@@ -37,6 +43,7 @@ class IngestionQueueItemRepo:
         item: IngestionQueueItem, 
         started_at: Optional[datetime] = None
     ) -> IngestionQueueItem:
+        """Mark a queued item as processing and set its start time."""
         item.status = QueueStatus.processing
         item.started_at = started_at or datetime.now(timezone.utc)
         self.session.add(item)
@@ -48,6 +55,7 @@ class IngestionQueueItemRepo:
         item: IngestionQueueItem, 
         rag_message: str | None = None
     ) -> IngestionQueueItem:
+        """Flag an item as successfully indexed and record a completion timestamp."""
         item.status = QueueStatus.indexed
         item.ended_at = datetime.now(timezone.utc)
         item.rag_message = rag_message
@@ -60,6 +68,7 @@ class IngestionQueueItemRepo:
         item: IngestionQueueItem,
         rag_message: str | None = None,
     ) -> IngestionQueueItem:
+        """Move an item to failed with an optional error message."""
         item.status = QueueStatus.failed
         item.ended_at = datetime.now(timezone.utc)
         item.rag_message = rag_message
@@ -67,12 +76,11 @@ class IngestionQueueItemRepo:
         self.session.flush()
         return item
     
-    """Reset processing items older than the timeout back to queued and return their ids."""
     def reset_stale_processing_items(
         self,
         timeout_seconds: float
     ) -> list[int]:
-        
+        """Reset processing items older than the timeout back to queued and return their ids."""
         cutoff = datetime.now(timezone.utc) - timedelta(seconds=timeout_seconds)
 
         stale_ids = (

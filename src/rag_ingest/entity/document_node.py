@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""SQLAlchemy model representing a document stored in the RAG system."""
+
 from datetime import datetime
 from typing import TYPE_CHECKING
 
@@ -12,6 +14,7 @@ if TYPE_CHECKING:
     from .ingestion_queue_item import IngestionQueueItem
 
 class DocumentNode(Base):
+    """Persisted document metadata with a one-to-many relation to ingestion queue items."""
     __tablename__ = "document_node"
 
     id: Mapped[int] = mapped_column(primary_key=True)

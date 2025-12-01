@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""SQLAlchemy model describing an item waiting to be ingested."""
+
 from datetime import datetime
 from typing import TYPE_CHECKING
 
@@ -15,6 +17,7 @@ if TYPE_CHECKING:
 
 
 class IngestionQueueItem(Base):
+    """Track ingestion status and link back to the underlying document and logs."""
     __tablename__ = "ingestion_queue_item"
 
     id: Mapped[int] = mapped_column(primary_key=True)

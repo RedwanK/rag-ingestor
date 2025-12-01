@@ -1,3 +1,5 @@
+"""Vision-capable LLM adapters supporting both OpenAI and Ollama backends."""
+
 import os
 from lightrag.llm.openai import openai_complete
 from lightrag.llm.ollama import ollama_model_complete
@@ -9,6 +11,7 @@ load_dotenv()
 def vision_model_func(
         prompt, system_prompt=None, history_messages=[], image_data=None, messages=None, **kwargs
     ):
+        """Dispatch vision or text-only prompts to the correct model invocation."""
         # If messages format is provided (for multimodal VLM enhanced query), use it directly
         if messages:
             return openai_complete(
@@ -56,6 +59,7 @@ def vision_model_func(
 def vision_model_func_bck(
         prompt, system_prompt=None, history_messages=[], image_data=None, messages=None, **kwargs
     ):
+        """Fallback implementation using Ollama for multimodal requests."""
         # If messages format is provided (for multimodal VLM enhanced query), use it directly
         if messages:
             return ollama_model_complete(

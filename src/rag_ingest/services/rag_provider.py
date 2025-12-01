@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Factory for asynchronously initializing LightRAG and RAGAnything providers."""
+
 import os
 
 from lightrag import LightRAG
@@ -17,6 +19,7 @@ class RAGProvider(AsyncMixin):
     rag_anything = None
 
     async def __ainit__(self, rag_storage_dir):
+        """Lazily boot LightRAG storages and hydrate the RAGAnything wrapper."""
         if os.path.exists(rag_storage_dir) and os.listdir(rag_storage_dir):
             print("✅ Found existing LightRAG instance, loading...")
         else:

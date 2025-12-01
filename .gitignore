@@ -13,3 +13,4 @@ src/rag_ingest/entity/__pycache__
 src/rag_ingest/orm/__pycache__
 src/rag_ingest/services/utils/__pycache__
 src/rag_ingest.egg-info/
+src/rag_ingest/repository/__pycache__

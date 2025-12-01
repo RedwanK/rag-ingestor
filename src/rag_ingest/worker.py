@@ -14,84 +14,70 @@ from .orm import (
     get_session_maker
 )
 from .entity import IngestionQueueItem, QueueStatus
-from .repository import (
-    get_next_queued,
-    has_processing,
-    log_event,
-    mark_failed,
-    mark_indexed,
-    reset_stale_processing,
-    reserve_for_processing,
-)
+from .repository import IngestionQueueItemRepo, IngestionLogRepo
 from .services import RAGProvider
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
-
-
-class MissingFileError(FileNotFoundError):
-    """Raised when the referenced queue item file cannot be read."""
-
 
 def resolve_storage_path(shared_root: Path, relative_path: str) -> Path:
     return (shared_root / relative_path).resolve()
 
 
 async def process_queue_item(
-    session_factory: sessionmaker,
+    ingestion_log_repo: IngestionLogRepo,
+    ingestion_queue_item_repo: IngestionQueueItemRepo,
     queue_item: IngestionQueueItem,
     shared_root: Path,
     rag_provider: RAGProvider,
 ) -> None:
-    with session_factory() as session:
-        queue_item = session.get(IngestionQueueItem, queue_item.id)
-        abs_path = resolve_storage_path(shared_root, queue_item.storage_path)
-        if not abs_path.exists() or not abs_path.is_file():
-            logger.error("File missing or unreadable: %s", abs_path)
-            mark_failed(
-                session,
-                queue_item,
-                status=QueueStatus.download_failed,
-                rag_message=f"File not found at {abs_path}",
-            )
-            log_event(
-                session,
-                ingestion_queue_item_id=queue_item.id,
-                level="error",
-                message=f"Unable to open file at {abs_path}",
-            )
-            session.commit()
-            return
+    queue_item = ingestion_queue_item_repo.find_one_by_id(queue_item.id)
 
-        try:
-            await rag_provider.rag_anything.process_document_complete(file_path=abs_path)
-            mark_indexed(
-                session,
-                queue_item,
-                rag_message="Ingestion completed successfully",
-            )
-            log_event(
-                session,
-                ingestion_queue_item_id=queue_item.id,
-                level="info",
-                message=f"Successfully ingested {queue_item.storage_path}",
-            )
-            session.commit()
-        except Exception as exc:  # noqa: BLE001
-            logger.exception("Ingestion failed for queue item %s", queue_item.id)
-            mark_failed(
-                session,
-                queue_item,
-                status=QueueStatus.failed,
-                rag_message=str(exc),
-            )
-            log_event(
-                session,
-                ingestion_queue_item_id=queue_item.id,
-                level="error",
-                message=f"Failed to ingest {queue_item.storage_path}: {exc}",
-            )
-            session.commit()
+    abs_path = resolve_storage_path(shared_root, queue_item.storage_path)
+    if not abs_path.exists() or not abs_path.is_file():
+        logger.error("File missing or unreadable: %s", abs_path)
+
+        ingestion_queue_item_repo.mark_failed(
+            queue_item,
+            rag_message=f"File not found at {abs_path}",
+        )
+
+        ingestion_log_repo.add_ingestion_log(
+            ingestion_queue_item_id=queue_item.id,
+            level="error",
+            message=f"Unable to open file at {abs_path}",
+        )
+
+        return
+
+    try:
+        await rag_provider.rag_anything.process_document_complete(file_path=abs_path)
+
+        ingestion_queue_item_repo.mark_indexed(
+            queue_item,
+            rag_message="Ingestion completed successfully",
+        )
+
+        ingestion_log_repo.add_ingestion_log(
+            ingestion_queue_item_id=queue_item.id,
+            level="info",
+            message=f"Successfully ingested {queue_item.storage_path}",
+        )
+        
+    except Exception as exc:
+        logger.exception("Ingestion failed for queue item %s", queue_item.id)
+
+        ingestion_queue_item_repo.mark_failed(
+            queue_item,
+            status=QueueStatus.failed,
+            rag_message=str(exc),
+        )
+
+        ingestion_log_repo.add_ingestion_log(
+            ingestion_queue_item_id=queue_item.id,
+            level="error",
+            message=f"Failed to ingest {queue_item.storage_path}: {exc}",
+        )
 
 
 async def run_worker(
@@ -131,16 +117,26 @@ async def run_worker(
     while not stop_event.is_set():
         with session_factory() as session:
             session.expire_on_commit=False
-            reset_ids = reset_stale_processing(session, processing_timeout)
+            ingestion_queue_item_repo = IngestionQueueItemRepo(session)
+            ingestion_log_repo = IngestionLogRepo(session)
+
+            reset_ids = ingestion_queue_item_repo.reset_stale_processing_items(processing_timeout)
+
             if reset_ids:
+                for queue_item_id in reset_ids:
+                    ingestion_log_repo.add_ingestion_log(
+                        ingestion_queue_item_id=queue_item_id,
+                        level="warning",
+                        message="job resetted to queued after exceeding processing timeout",
+                    )
                 session.commit()
                 logger.warning("Reset %s stale jobs to queued", reset_ids)
 
-            if has_processing(session):
+            if ingestion_queue_item_repo.has_processing_item():
                 logger.info("Another worker is already processing a job; exiting")
                 return
 
-            queue_item = get_next_queued(session)
+            queue_item = ingestion_queue_item_repo.find_next_queued_item()
             if queue_item is None:
                 session.commit()
                 if exit_on_idle:
@@ -148,16 +144,16 @@ async def run_worker(
                 await asyncio.sleep(poll_interval)
                 continue
 
-            reserve_for_processing(session, queue_item, started_at=datetime.now(timezone.utc))
-            log_event(
-                session,
+            ingestion_queue_item_repo.reserve_item_for_processing(queue_item, started_at=datetime.now(timezone.utc))
+            ingestion_log_repo.add_ingestion_log(
                 ingestion_queue_item_id=queue_item.id,
                 level="info",
                 message="Job reserved for processing",
             )
             session.commit()
 
-        await process_queue_item(session_factory, queue_item, shared_root, rag_provider)
+            await process_queue_item(ingestion_log_repo, ingestion_queue_item_repo, queue_item, shared_root, rag_provider)
+            session.commit()
 
     logger.info("Worker stopped cleanly")
 

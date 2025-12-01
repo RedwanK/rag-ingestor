@@ -1,3 +1,5 @@
+"""Expose service factories and providers for RAG ingestion."""
+
 from .llm_provider import llm_model_func
 from .embed_provider import embedding_func
 from .vlm_provider import vision_model_func

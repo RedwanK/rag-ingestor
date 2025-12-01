@@ -1,3 +1,5 @@
+"""CLI entrypoint to ingest a single source into the LightRAG store."""
+
 import argparse
 import asyncio
 from pathlib import Path
@@ -5,6 +7,7 @@ from pathlib import Path
 from .services import llm_model_func, embedding_func, vision_model_func, RAGProvider
 
 def build_parser() -> argparse.ArgumentParser:
+    """Define CLI arguments for ingesting files or directories."""
     parser = argparse.ArgumentParser(
         description="Ingest sources into the local LightRAG store."
     )
@@ -22,6 +25,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 async def ingest(argv: list[str] | None = None) -> int:
+    """Run the ingestion flow for a provided filesystem path."""
     parser = build_parser()
     args = parser.parse_args(argv)
 
@@ -40,4 +44,5 @@ async def ingest(argv: list[str] | None = None) -> int:
     print('Great Success')
 
 def main() -> int:
+    """Synchronous wrapper to launch the async ingest coroutine."""
     return asyncio.run(ingest())

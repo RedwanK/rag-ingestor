@@ -1,3 +1,5 @@
+"""Convenience imports for ORM primitives and configuration helpers."""
+
 from .db import Base, get_engine, get_session_maker, create_schema
 from .config import Config
 

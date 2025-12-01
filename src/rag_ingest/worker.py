@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Background worker that polls the ingestion queue and processes items sequentially."""
+
 import asyncio
 import logging
 import signal
@@ -21,6 +23,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 def resolve_storage_path(shared_root: Path, relative_path: str) -> Path:
+    """Convert a queue item's relative storage path into an absolute file path."""
     return (shared_root / relative_path).resolve()
 
 
@@ -31,6 +34,7 @@ async def process_queue_item(
     shared_root: Path,
     rag_provider: RAGProvider,
 ) -> None:
+    """Handle a single queue item lifecycle: load file, ingest it, and record results."""
     queue_item = ingestion_queue_item_repo.find_one_by_id(queue_item.id)
 
     abs_path = resolve_storage_path(shared_root, queue_item.storage_path)
@@ -90,6 +94,7 @@ async def run_worker(
     exit_on_idle: bool = False,
     rag_provider_factory: Optional[Callable[[Path], Awaitable[RAGProvider]]] = None,
 ) -> None:
+    """Main worker loop that polls for jobs, reserves one at a time, and ingests it."""
     session_factory = session_factory or get_session_maker()
     shared_root = shared_root or Config.get_shared_storage_dir()
     rag_storage_dir = rag_storage_dir or Config.get_rag_storage_dir()
@@ -103,6 +108,7 @@ async def run_worker(
     stop_event = asyncio.Event()
 
     def _handle_stop(signame: str):
+        """Signal handler to request a graceful shutdown."""
         logger.info("Received %s, stopping worker loop", signame)
         stop_event.set()
 
@@ -158,4 +164,5 @@ async def run_worker(
     logger.info("Worker stopped cleanly")
 
 def main() -> int:
+    """Run the worker synchronously for CLI entrypoints."""
     return asyncio.run(run_worker())

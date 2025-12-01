@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Repository wrapper to persist ingestion log entries."""
+
 from datetime import datetime
 from sqlalchemy.orm import Session
 
@@ -9,6 +11,7 @@ class IngestionLogRepo:
     session: Session = None
 
     def __init__(self, session):
+        """Store the active DB session used to write logs."""
         self.session = session
 
     def add_ingestion_log(
@@ -17,6 +20,7 @@ class IngestionLogRepo:
         message: str,
         level: str = "info",
     ) -> IngestionLog:
+        """Create and persist a new ingestion log row."""
         log = IngestionLog(
             ingestion_queue_item_id=ingestion_queue_item_id, 
             message=message, 

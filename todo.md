@@ -39,4 +39,4 @@
 
 ## Refactor and Communication with Manager
 - [ ] Test some error scenario where ollama or LLM is not reachable, ingestor should place the ingestion_queue_item in failed mode #tests #ingestion
-- [ ] Continue complete refactor to handle properly SQL session and management #refactor #backend #ingestion
+- [x] Continue complete refactor to handle properly SQL session and management #refactor #backend #ingestion

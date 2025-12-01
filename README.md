@@ -10,6 +10,23 @@ pip install -e .
 
 ---
 
+## Architecture technique
+
+Le projet est centré autour de deux binaires principaux :
+
+- `rag-ingest single` déclenche une ingestion ponctuelle via `src/rag_ingest/ingestor.py` en appelant directement LightRAG/RAGAnything ;
+- `rag-ingest worker` (dans `src/rag_ingest/worker.py`) interroge la base MySQL, réserve un job de la file d’ingestion, récupère le fichier dans `SHARED_STORAGE_DIR` puis déclenche le pipeline LightRAG avant de journaliser le résultat.
+
+Organisation du code :
+
+- `src/rag_ingest/entity` : modèles SQLAlchemy (jobs d’ingestion, logs, documents).
+- `src/rag_ingest/repository` : opérations sur la file (`IngestionQueueItemRepo`) et sur les journaux (`IngestionLogRepo`).
+- `src/rag_ingest/services` : adaptation LightRAG/RAGAnything et fournisseurs de modèles (LLM, embeddings, VLM).
+- `src/rag_ingest/orm` : configuration de la base, création du schéma et session factory.
+- `docs/ingestion_worker.md` et `docs/technical/*` : documentation fonctionnelle et technique détaillée (diagrammes Mermaid inclus).
+
+Les nouveaux documents dans `docs/technical/` décrivent l’architecture détaillée, le diagramme de classes et les séquences d’exécution pour le worker et l’ingestor.
+
 ## Installation (Linux & macOS)
 
 ### 1. Prérequis

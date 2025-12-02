@@ -73,7 +73,6 @@ async def process_queue_item(
 
         ingestion_queue_item_repo.mark_failed(
             queue_item,
-            status=QueueStatus.failed,
             rag_message=str(exc),
         )
 

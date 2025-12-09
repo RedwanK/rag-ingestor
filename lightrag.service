@@ -1,0 +1,8 @@
+[Unit]
+Description=LightRag instance for custom RAG
+
+
+[Service]
+Environment="PATH=/var/www/rag-ingestor/.venv/bin"
+WorkingDirectory=/var/www/rag-ingestor
+ExecStart=/var/www/rag-ingestor/.venv/bin/lightrag-server
